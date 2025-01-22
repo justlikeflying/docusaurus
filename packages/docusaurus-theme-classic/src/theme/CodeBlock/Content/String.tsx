@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React from 'react';
+import React, {type ReactNode} from 'react';
 import clsx from 'clsx';
 import {useThemeConfig, usePrismTheme} from '@docusaurus/theme-common';
 import {
   parseCodeBlockTitle,
   parseLanguage,
   parseLines,
-  containsLineNumbers,
+  getLineNumbersStart,
   useCodeWordWrap,
 } from '@docusaurus/theme-common/internal';
 import {Highlight, type Language} from 'prism-react-renderer';
@@ -38,7 +38,7 @@ export default function CodeBlockString({
   title: titleProp,
   showLineNumbers: showLineNumbersProp,
   language: languageProp,
-}: Props): JSX.Element {
+}: Props): ReactNode {
   const {
     prism: {defaultLanguage, magicComments},
   } = useThemeConfig();
@@ -59,8 +59,10 @@ export default function CodeBlockString({
     language,
     magicComments,
   });
-  const showLineNumbers =
-    showLineNumbersProp ?? containsLineNumbers(metastring);
+  const lineNumbersStart = getLineNumbersStart({
+    showLineNumbers: showLineNumbersProp,
+    metastring,
+  });
 
   return (
     <Container
@@ -87,8 +89,14 @@ export default function CodeBlockString({
               <code
                 className={clsx(
                   styles.codeBlockLines,
-                  showLineNumbers && styles.codeBlockLinesWithNumbering,
-                )}>
+                  lineNumbersStart !== undefined &&
+                    styles.codeBlockLinesWithNumbering,
+                )}
+                style={
+                  lineNumbersStart === undefined
+                    ? undefined
+                    : {counterReset: `line-count ${lineNumbersStart - 1}`}
+                }>
                 {tokens.map((line, i) => (
                   <Line
                     key={i}
@@ -96,7 +104,7 @@ export default function CodeBlockString({
                     getLineProps={getLineProps}
                     getTokenProps={getTokenProps}
                     classNames={lineClassNames[i]}
-                    showLineNumbers={showLineNumbers}
+                    showLineNumbers={lineNumbersStart !== undefined}
                   />
                 ))}
               </code>
